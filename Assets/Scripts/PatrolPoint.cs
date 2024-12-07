@@ -1,16 +1,34 @@
+using System.Collections;
 using UnityEngine;
 
 public class PatrolPoint : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    bool visited = false;
+    float waitTime = 3f;
+
+    public bool Visited 
     {
-        
+        get {return visited;}
+        set 
+        {
+            visited = value;
+
+            if(value)
+            {
+                StartCoroutine(AwaitFlipVisited());
+            }
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    public void FlipVisited()
     {
-        
-    } 
+        Visited = !Visited;
+    }
+
+    IEnumerator AwaitFlipVisited()
+    {
+        yield return new WaitForSeconds(waitTime);  // Wait for the specified time
+        FlipVisited();
+        Debug.Log("Flipped");
+    }
 }

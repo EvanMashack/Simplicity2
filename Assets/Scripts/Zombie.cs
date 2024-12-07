@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Collections.Generic; 
 using System.Drawing;
 using Unity.Mathematics;
 using Unity.VisualScripting;
@@ -6,47 +6,67 @@ using UnityEngine;
 
 public class Zombie : MonoBehaviour
 {
+    Rigidbody rb;
     private PatrolPoint[] patrolPoints; 
-    PatrolPoint closestPoint;
+    PatrolPoint destinationPoint;
 
     void Start() 
     { 
-        patrolPoints = getPatrolPoints();
+        rb = GetComponent<Rigidbody>();
+        patrolPoints = GetPatrolPoints();
+        SetDestinationPoint();  
+    }
 
-        if(patrolPoints != null)
+    void FixedUpdate()
+    {  
+        MoveZombie();
+    }
+
+    void OnTriggerEnter(Collider other) {
+        destinationPoint.Visited = true; 
+        SetDestinationPoint();
+    }
+
+    void MoveZombie()
+    {
+        Vector3 movement = (destinationPoint.transform.position - transform.position).normalized; 
+        rb.MovePosition(rb.position + movement * 5f * Time.fixedDeltaTime); 
+
+        if (movement.magnitude > 0)
         {
-            foreach(PatrolPoint point in patrolPoints)
-            {
-                Debug.Log("Name: " + point.gameObject.name);
-            }
+            // Get the child GameObject (visual model)
+            Transform visualModel = transform.GetChild(0);
+
+            // Create a rotation based on movement
+            Quaternion targetRotation = Quaternion.LookRotation(movement);
+
+            // Apply the rotation to the child
+            visualModel.rotation = targetRotation;
         }
     }
 
-    void Update()
-    { 
-        float closestDistance = Mathf.Infinity; 
-
-        foreach(PatrolPoint point in patrolPoints)
-        {  
-            float distance = Vector3.Distance(transform.position, point.transform.position); 
-            
-            if(distance < closestDistance)
-            {
-                closestDistance = distance;
-                closestPoint = point;
-            }
-        } 
-
-        Vector3 direction = (closestPoint.transform.position - transform.position).normalized;
-
-        transform.Translate(direction * 5f * Time.deltaTime); 
-    }
-
-    PatrolPoint[] getPatrolPoints() {  
+    PatrolPoint[] GetPatrolPoints() {  
         return transform.parent.Find("Route").GetComponentsInChildren<PatrolPoint>();
     } 
 
-    void OnTriggerEnter(Collider other) {
-        Debug.Log("smeeb");
+    void SetDestinationPoint()
+    {
+        float shortestDistance = Mathf.Infinity; 
+        float distance = Mathf.Infinity;
+
+        foreach(PatrolPoint point in patrolPoints)
+        {
+            if(!point.Visited) 
+            { 
+                distance = Vector3.Distance(transform.position, point.transform.position); 
+            } 
+
+            if(distance < shortestDistance)
+            {
+                shortestDistance = distance;
+                destinationPoint = point;
+            }
+        }
+        Debug.Log("Destination: " + destinationPoint.gameObject.name);
     }
 }
